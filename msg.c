@@ -111,7 +111,6 @@ msg_potato* create_msg_potato(int hops)
     return msg;
 }
 
-
 msg_init_info* create_init_info(int np_ip, int np_port)
 {
     msg_init_info* msg = (msg_init_info*)malloc(sizeof(msg_init_info));

@@ -210,14 +210,15 @@ int main(int argc, const char* argv[])
 
     master_fd = connect_master(master_name, port_num);
     msg_master_hello* mh_msg = (msg_master_hello*)recv_msg(master_fd);
-    my_id =  mh_msg->player_id;
+    my_id = mh_msg->player_id;
     num_players = mh_msg->num_players;
     srand((unsigned int)time(NULL) + my_id);
     free(mh_msg);
     printf("Connected as player %d out of %d total players\n", my_id,
            num_players);
 
-    msg_player_hello* ph_msg = (msg_player_hello*)create_player_hello(my_id, listen_port);
+    msg_player_hello* ph_msg =
+        (msg_player_hello*)create_player_hello(my_id, listen_port);
     send_msg(master_fd, (msg_header*)ph_msg);
     free(ph_msg);
 
