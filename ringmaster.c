@@ -26,7 +26,7 @@ int parse_int(const char* buffer, int min, int max)
     }
     if (val < min || val > max)
     {
-        printf("parameter(s) out of range.\n");
+        fprintf(stderr, "parameter(s) out of range.\n");
         print_help_and_exit();
     }
     return val;
@@ -178,7 +178,7 @@ int proc_msg(msg_header* msg)
             return 1;
         }
         default:
-            printf("Unexpected msg type %d\n", msg->type);
+            fprintf(stderr, "Unexpected msg type %d\n", msg->type);
             exit(EXIT_FAILURE);
     }
 }
