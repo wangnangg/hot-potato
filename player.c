@@ -73,9 +73,10 @@ int connect_master(const char* master_name, int port_num)
     host_info.ai_family = AF_INET;
     host_info.ai_socktype = SOCK_STREAM;
 
-    if (getaddrinfo(master_name, port_buff, &host_info, &host_info_list) != 0)
+    int s = getaddrinfo(master_name, port_buff, &host_info, &host_info_list);
+    if (s != 0)
     {
-        perror("getaddrinfo");
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
         exit(EXIT_FAILURE);
     }
 
@@ -84,14 +85,17 @@ int connect_master(const char* master_name, int port_num)
     if (socket_fd == -1)
     {
         perror("socket");
+        freeaddrinfo(host_info_list);
         exit(EXIT_FAILURE);
     }
     if (connect(socket_fd, host_info_list->ai_addr,
                 host_info_list->ai_addrlen) < 0)
     {
         perror("connect");
+        freeaddrinfo(host_info_list);
         exit(EXIT_FAILURE);
     }
+    freeaddrinfo(host_info_list);
     return socket_fd;
 }
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include "errno.h"
 
 void send_msg(int fd, const msg_header* msg)
@@ -104,6 +105,7 @@ msg_potato* create_msg_potato(int hops)
 {
     size_t msg_size = offsetof(msg_potato, the_potato) + potato_size(hops);
     msg_potato* msg = (msg_potato*)malloc(msg_size);
+    memset(msg, 0, msg_size);
     msg->header.type = POTATO;
     msg->header.size = msg_size;
     msg->the_potato.remain_hops = hops;

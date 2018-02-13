@@ -1,4 +1,5 @@
 CFLAGS= -Wall -Wextra -DNDEBUG -O3
+#CFLAGS= -Wall -Wextra -g
 
 .PHONY: all clean
 

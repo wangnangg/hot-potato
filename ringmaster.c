@@ -207,8 +207,7 @@ int main(int argc, const char* argv[])
         send_msg(player_list[i].fd, (msg_header*)msg);
         free(msg);
 #ifndef NDEBUG
-        printf("Player %d is connected, listening on port %d\n", i,
-               player_list[i].port);
+        printf("Player %d is connected.\n", i);
 #endif
     }
     close(sockfd);
@@ -225,4 +224,5 @@ int main(int argc, const char* argv[])
     {
         close(player_list[i].fd);
     }
+    free(player_list);
 }
