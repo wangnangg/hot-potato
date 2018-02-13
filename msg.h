@@ -1,7 +1,8 @@
 #pragma once
 #include <stdint.h>
 #include "potato.h"
-enum msg_type{
+enum msg_type
+{
     MASTER_HELLO,
     PLAYER_HELLO,
     PLAYER_READY,
@@ -14,11 +15,11 @@ typedef struct
     int size;
 } msg_header;
 
-
 void send_msg(int fd, const msg_header* msg);
 msg_header* recv_msg(int fd);
 
-typedef struct {
+typedef struct
+{
     msg_header header;
     int player_id;
     int num_players;
@@ -26,27 +27,33 @@ typedef struct {
     uint16_t next_player_port;
 } msg_master_hello;
 
-msg_master_hello* create_master_hello(int player_id, int num_players, uint32_t next_player_ip, uint16_t next_player_port);
+msg_master_hello* create_master_hello(int player_id, int num_players,
+                                      uint32_t next_player_ip,
+                                      uint16_t next_player_port);
 
-typedef struct {
+typedef struct
+{
     msg_header header;
 } msg_master_bye;
 
 msg_master_bye* create_master_bye();
 
-typedef struct {
+typedef struct
+{
     msg_header header;
     uint16_t listen_port;
 } msg_player_hello;
 
 msg_player_hello* create_player_hello(uint16_t listen_port);
 
-typedef struct {
+typedef struct
+{
     msg_header header;
 } msg_player_ready;
 msg_player_ready* create_player_ready();
 
-typedef struct{
+typedef struct
+{
     msg_header header;
     potato the_potato;
 } msg_potato;

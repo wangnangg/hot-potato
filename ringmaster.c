@@ -1,12 +1,12 @@
 #include <errno.h>
 #include <limits.h>
 #include <netinet/in.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
-#include <stdint.h>
-#include <unistd.h>
 #include <time.h>
+#include <unistd.h>
 #include "msg.h"
 
 void print_help_and_exit()
@@ -78,7 +78,7 @@ void wait_for_one(int sockfd, player* p)
     int addrlen = sizeof(address);
     int fd;
     if ((fd = accept(sockfd, (struct sockaddr*)&address,
-                             (socklen_t*)&addrlen)) < 0)
+                     (socklen_t*)&addrlen)) < 0)
     {
         perror("accept");
         exit(EXIT_FAILURE);
@@ -87,25 +87,24 @@ void wait_for_one(int sockfd, player* p)
     p->ip = ntohl(address.sin_addr.s_addr);
 }
 
-int randint(int N)
-{
-    return rand() % N;
-}
+int randint(int N) { return rand() % N; }
 
 int proc_msg(msg_header* msg)
 {
-        switch(msg->type)
-        {
+    switch (msg->type)
+    {
         case POTATO:
             printf("Trace of potato:");
             msg_potato* pt_msg = (msg_potato*)msg;
-            for(int i=0; i<pt_msg->the_potato.trace_size; i++)
+            for (int i = 0; i < pt_msg->the_potato.trace_size; i++)
             {
                 printf("%d", pt_msg->the_potato.trace[i]);
-                if(i == pt_msg->the_potato.trace_size - 1)
+                if (i == pt_msg->the_potato.trace_size - 1)
                 {
                     printf("\n");
-                } else{
+                }
+                else
+                {
                     printf(",");
                 }
             }
@@ -113,8 +112,7 @@ int proc_msg(msg_header* msg)
         default:
             printf("Unexpected msg type %d\n", msg->type);
             exit(EXIT_FAILURE);
-        }
-
+    }
 }
 
 int main(int argc, const char* argv[])
@@ -141,47 +139,49 @@ int main(int argc, const char* argv[])
         player_list[i].port = msg->listen_port;
         free(msg);
 #ifndef NDEBUG
-        printf("Player %d is connected, listening on port %d\n", i, player_list[i].port);
+        printf("Player %d is connected, listening on port %d\n", i,
+               player_list[i].port);
 #endif
     }
     close(sockfd);
-    for (int i=0; i<num_players; i++)
+    for (int i = 0; i < num_players; i++)
     {
         player* np = &player_list[(i + 1) % num_players];
-        msg_header* msg = (msg_header*)create_master_hello(player_list[i].id, num_players, np->ip, np->port);
+        msg_header* msg = (msg_header*)create_master_hello(
+            player_list[i].id, num_players, np->ip, np->port);
         send_msg(player_list[i].fd, msg);
         free(msg);
     }
-    for (int i=0; i<num_players; i++)
+    for (int i = 0; i < num_players; i++)
     {
         msg_header* msg = recv_msg(player_list[i].fd);
         free(msg);
         printf("Player %d is ready to play\n", i);
     }
 
-    if(num_hops > 0)
+    if (num_hops > 0)
     {
         srand((unsigned int)time(NULL) + num_players);
         int first_id = randint(num_players);
-        printf("Ready to start the game, sending potato to player %d\n", first_id);
+        printf("Ready to start the game, sending potato to player %d\n",
+               first_id);
         msg_header* pt_msg = (msg_header*)create_msg_potato(num_hops);
         send_msg(player_list[first_id].fd, pt_msg);
         free(pt_msg);
 
-        int *fds = (int*)malloc(sizeof(int) * num_players);
-        for(int i=0; i<num_players; i++)
+        int* fds = (int*)malloc(sizeof(int) * num_players);
+        for (int i = 0; i < num_players; i++)
         {
             fds[i] = player_list[i].fd;
         }
         msg_loop(num_players, fds, proc_msg);
     }
 
-    for (int i=0; i<num_players; i++)
+    for (int i = 0; i < num_players; i++)
     {
         msg_header* msg = (msg_header*)create_master_bye();
         send_msg(player_list[i].fd, msg);
         free(msg);
         close(player_list[i].fd);
     }
-
 }

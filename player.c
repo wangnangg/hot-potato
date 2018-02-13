@@ -57,7 +57,7 @@ int listen_on_any(int* port_num, int wait_queue)
     }
     socklen_t addr_size = sizeof(struct sockaddr_in);
     struct sockaddr_in addr;
-    getsockname(sockfd, (struct sockaddr *)&addr, &addr_size);
+    getsockname(sockfd, (struct sockaddr*)&addr, &addr_size);
     *port_num = ntohs(addr.sin_port);
     return sockfd;
 }
@@ -124,7 +124,7 @@ typedef struct
 
 void* get_next_fd(void* addr)
 {
-    player_addr *paddr = (player_addr*) addr;
+    player_addr* paddr = (player_addr*)addr;
     int fd;
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -151,10 +151,7 @@ void* get_next_fd(void* addr)
     return fd_store;
 }
 
-int randint(int N)
-{
-    return rand() % N;
-}
+int randint(int N) { return rand() % N; }
 int my_id;
 int master_fd;
 int next_fd;
@@ -162,36 +159,41 @@ int prev_fd;
 int num_players;
 int proc_msg(msg_header* msg)
 {
-    switch(msg->type)
+    switch (msg->type)
     {
-    case MASTER_BYE:
-        return 1;
-    case POTATO:
-    {
-        msg_potato* pt_msg = (msg_potato*)msg;
-        potato* pt = &pt_msg->the_potato;
-        pt->trace[pt->trace_size - pt->remain_hops] = my_id;
-        pt->remain_hops -= 1;
-        if(pt_msg->the_potato.remain_hops == 0)
+        case MASTER_BYE:
+            return 1;
+        case POTATO:
         {
-            printf("I'm it\n");
-            send_msg(master_fd, msg);
-        } else{
-            int r = randint(2);
-            if(r == 0)
+            msg_potato* pt_msg = (msg_potato*)msg;
+            potato* pt = &pt_msg->the_potato;
+            pt->trace[pt->trace_size - pt->remain_hops] = my_id;
+            pt->remain_hops -= 1;
+            if (pt_msg->the_potato.remain_hops == 0)
             {
-                printf("Sending potato to %d\n", (my_id -1 + num_players) % num_players);
-                send_msg(prev_fd, msg);
-            } else {
-                printf("Sending potato to %d\n", (my_id +1) % num_players);
-                send_msg(next_fd, msg);
+                printf("I'm it\n");
+                send_msg(master_fd, msg);
             }
+            else
+            {
+                int r = randint(2);
+                if (r == 0)
+                {
+                    printf("Sending potato to %d\n",
+                           (my_id - 1 + num_players) % num_players);
+                    send_msg(prev_fd, msg);
+                }
+                else
+                {
+                    printf("Sending potato to %d\n", (my_id + 1) % num_players);
+                    send_msg(next_fd, msg);
+                }
+            }
+            return 0;
         }
-        return 0;
-    }
-    default:
-        printf("Unexpected msg type %d\n", msg->type);
-        exit(EXIT_FAILURE);
+        default:
+            printf("Unexpected msg type %d\n", msg->type);
+            exit(EXIT_FAILURE);
     }
 }
 
@@ -237,7 +239,7 @@ int main(int argc, const char* argv[])
 
     close(listen_fd);
 
-    msg_header *ready_msg =  (msg_header *)create_player_ready();
+    msg_header* ready_msg = (msg_header*)create_player_ready();
     send_msg(master_fd, ready_msg);
     free(ready_msg);
 
