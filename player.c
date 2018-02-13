@@ -209,19 +209,23 @@ int main(int argc, const char* argv[])
     int listen_fd = listen_on_any(&listen_port, 1);
 
     master_fd = connect_master(master_name, port_num);
-    msg_header* msg = (msg_header*)create_player_hello(listen_port);
-    send_msg(master_fd, msg);
-    free(msg);
-    msg_master_hello* phello_msg = (msg_master_hello*)recv_msg(master_fd);
-    my_id = phello_msg->player_id;
-    num_players = phello_msg->num_players;
-    player_addr next_player_addr;
-    next_player_addr.ip = phello_msg->next_player_ip;
-    next_player_addr.port = phello_msg->next_player_port;
-    free(phello_msg);
+    msg_master_hello* mh_msg = (msg_master_hello*)recv_msg(master_fd);
+    my_id =  mh_msg->player_id;
+    num_players = mh_msg->num_players;
+    srand((unsigned int)time(NULL) + my_id);
+    free(mh_msg);
     printf("Connected as player %d out of %d total players\n", my_id,
            num_players);
-    srand((unsigned int)time(NULL) + my_id);
+
+    msg_player_hello* ph_msg = (msg_player_hello*)create_player_hello(my_id, listen_port);
+    send_msg(master_fd, (msg_header*)ph_msg);
+    free(ph_msg);
+
+    msg_init_info* init_msg = (msg_init_info*)recv_msg(master_fd);
+    player_addr next_player_addr;
+    next_player_addr.ip = init_msg->next_player_ip;
+    next_player_addr.port = init_msg->next_player_port;
+    free(init_msg);
 
     pthread_t prev_fd_thread;
     pthread_t next_fd_thread;
@@ -239,7 +243,7 @@ int main(int argc, const char* argv[])
 
     close(listen_fd);
 
-    msg_header* ready_msg = (msg_header*)create_player_ready();
+    msg_header* ready_msg = (msg_header*)create_player_ready(my_id);
     send_msg(master_fd, ready_msg);
     free(ready_msg);
 

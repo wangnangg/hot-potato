@@ -89,11 +89,72 @@ void wait_for_one(int sockfd, player* p)
 
 int randint(int N) { return rand() % N; }
 
+player* player_list;
+int num_players;
+int num_hops;
+int num_ready_players = 0;
+int num_con_players = 0;
+
 int proc_msg(msg_header* msg)
 {
     switch (msg->type)
     {
+        case PLAYER_HELLO:
+        {
+            msg_player_hello* pmsg = (msg_player_hello*)msg;
+            player_list[pmsg->player_id].port = pmsg->listen_port;
+            num_con_players += 1;
+            if (num_con_players == num_players)
+            {
+                for (int i = 0; i < num_players; i++)
+                {
+                    player* np = &player_list[(i + 1) % num_players];
+                    msg_header* msg =
+                        (msg_header*)create_init_info(np->ip, np->port);
+                    send_msg(player_list[i].fd, msg);
+                    free(msg);
+                }
+            }
+            return 0;
+        }
+        case PLAYER_READY:
+        {
+            msg_player_ready* pmsg = (msg_player_ready*)msg;
+            printf("Player %d is ready to play\n", pmsg->player_id);
+            num_ready_players += 1;
+            if (num_ready_players == num_players)
+            {
+                if (num_hops > 0)
+                {
+                    int first_id = randint(num_players);
+                    printf(
+                        "Ready to start the game, sending potato to player "
+                        "%d\n",
+                        first_id);
+                    msg_header* pt_msg =
+                        (msg_header*)create_msg_potato(num_hops);
+                    send_msg(player_list[first_id].fd, pt_msg);
+                    free(pt_msg);
+                    return 0;
+                }
+                else
+                {
+                    for (int i = 0; i < num_players; i++)
+                    {
+                        msg_header* msg = (msg_header*)create_master_bye();
+                        send_msg(player_list[i].fd, msg);
+                        free(msg);
+                    }
+                    return 1;
+                }
+            }
+            else
+            {
+                return 0;
+            }
+        }
         case POTATO:
+        {
             printf("Trace of potato:");
             msg_potato* pt_msg = (msg_potato*)msg;
             for (int i = 0; i < pt_msg->the_potato.trace_size; i++)
@@ -108,7 +169,14 @@ int proc_msg(msg_header* msg)
                     printf(",");
                 }
             }
+            for (int i = 0; i < num_players; i++)
+            {
+                msg_header* msg = (msg_header*)create_master_bye();
+                send_msg(player_list[i].fd, msg);
+                free(msg);
+            }
             return 1;
+        }
         default:
             printf("Unexpected msg type %d\n", msg->type);
             exit(EXIT_FAILURE);
@@ -122,21 +190,21 @@ int main(int argc, const char* argv[])
         print_help_and_exit();
     }
     int port_num = parse_int(argv[1], 1, 65535);
-    int num_players = parse_int(argv[2], 1, INT_MAX);
-    int num_hops = parse_int(argv[3], 0, 512);
+    num_players = parse_int(argv[2], 1, INT_MAX);
+    num_hops = parse_int(argv[3], 0, 512);
+    srand((unsigned int)time(NULL) + num_players);
     printf("Potato Ringmaster\n");
     printf("Players = %d\n", num_players);
     printf("Hops = %d\n", num_hops);
 
-    player* player_list;
     player_list = malloc(sizeof(player) * num_players);
     int sockfd = listen_on(port_num, num_players);
     for (int i = 0; i < num_players; i++)
     {
         player_list[i].id = i;
         wait_for_one(sockfd, &player_list[i]);
-        msg_player_hello* msg = (msg_player_hello*)recv_msg(player_list[i].fd);
-        player_list[i].port = msg->listen_port;
+        msg_master_hello* msg = create_master_hello(i, num_players);
+        send_msg(player_list[i].fd, (msg_header*)msg);
         free(msg);
 #ifndef NDEBUG
         printf("Player %d is connected, listening on port %d\n", i,
@@ -144,44 +212,17 @@ int main(int argc, const char* argv[])
 #endif
     }
     close(sockfd);
+
+    int* fds = (int*)malloc(sizeof(int) * num_players);
     for (int i = 0; i < num_players; i++)
     {
-        player* np = &player_list[(i + 1) % num_players];
-        msg_header* msg = (msg_header*)create_master_hello(
-            player_list[i].id, num_players, np->ip, np->port);
-        send_msg(player_list[i].fd, msg);
-        free(msg);
+        fds[i] = player_list[i].fd;
     }
+    msg_loop(num_players, fds, proc_msg);
+
+    free(fds);
     for (int i = 0; i < num_players; i++)
     {
-        msg_header* msg = recv_msg(player_list[i].fd);
-        free(msg);
-        printf("Player %d is ready to play\n", i);
-    }
-
-    if (num_hops > 0)
-    {
-        srand((unsigned int)time(NULL) + num_players);
-        int first_id = randint(num_players);
-        printf("Ready to start the game, sending potato to player %d\n",
-               first_id);
-        msg_header* pt_msg = (msg_header*)create_msg_potato(num_hops);
-        send_msg(player_list[first_id].fd, pt_msg);
-        free(pt_msg);
-
-        int* fds = (int*)malloc(sizeof(int) * num_players);
-        for (int i = 0; i < num_players; i++)
-        {
-            fds[i] = player_list[i].fd;
-        }
-        msg_loop(num_players, fds, proc_msg);
-    }
-
-    for (int i = 0; i < num_players; i++)
-    {
-        msg_header* msg = (msg_header*)create_master_bye();
-        send_msg(player_list[i].fd, msg);
-        free(msg);
         close(player_list[i].fd);
     }
 }

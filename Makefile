@@ -1,11 +1,11 @@
-CFLAGS= -Wall -Wextra -DNDEBUG -g
+CFLAGS= -Wall -Wextra -DNDEBUG -O3
 
 .PHONY: all clean
 
 all: ringmaster player
 
 ringmaster: ringmaster.o msg.o potato.o
-	gcc ringmaster.o msg.o potato.o -o ringmaster
+	gcc ${CFLAGS} ringmaster.o msg.o potato.o -o ringmaster
 
 ringmaster.o: ringmaster.c msg.h potato.h
 	gcc ${CFLAGS} -c ringmaster.c -o ringmaster.o
@@ -20,7 +20,7 @@ potato.o: potato.c potato.h
 	gcc ${CFLAGS} -c potato.c -o potato.o
 
 player: player.o msg.o potato.o
-	gcc player.o msg.o potato.o -o player -lpthread
+	gcc ${CFLAGS} player.o msg.o potato.o -o player -lpthread
 
 
 clean:

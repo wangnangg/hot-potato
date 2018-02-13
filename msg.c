@@ -63,17 +63,13 @@ msg_header* recv_msg(int fd)
     return msg;
 }
 
-msg_master_hello* create_master_hello(int player_id, int num_players,
-                                      uint32_t next_player_ip,
-                                      uint16_t next_player_port)
+msg_master_hello* create_master_hello(int player_id, int num_players)
 {
     msg_master_hello* msg = (msg_master_hello*)malloc(sizeof(msg_master_hello));
     msg->header.type = MASTER_HELLO;
     msg->header.size = sizeof(msg_master_hello);
     msg->player_id = player_id;
     msg->num_players = num_players;
-    msg->next_player_ip = next_player_ip;
-    msg->next_player_port = next_player_port;
     return msg;
 }
 
@@ -85,20 +81,22 @@ msg_master_bye* create_master_bye()
     return msg;
 }
 
-msg_player_hello* create_player_hello(uint16_t listen_port)
+msg_player_hello* create_player_hello(int player_id, uint16_t listen_port)
 {
     msg_player_hello* msg = (msg_player_hello*)malloc(sizeof(msg_player_hello));
     msg->header.type = PLAYER_HELLO;
     msg->header.size = sizeof(msg_player_hello);
     msg->listen_port = listen_port;
+    msg->player_id = player_id;
     return msg;
 }
 
-msg_player_ready* create_player_ready()
+msg_player_ready* create_player_ready(int player_id)
 {
     msg_player_ready* msg = (msg_player_ready*)malloc(sizeof(msg_player_ready));
     msg->header.type = PLAYER_READY;
     msg->header.size = sizeof(msg_player_ready);
+    msg->player_id = player_id;
     return msg;
 }
 
@@ -110,6 +108,17 @@ msg_potato* create_msg_potato(int hops)
     msg->header.size = msg_size;
     msg->the_potato.remain_hops = hops;
     msg->the_potato.trace_size = hops;
+    return msg;
+}
+
+
+msg_init_info* create_init_info(int np_ip, int np_port)
+{
+    msg_init_info* msg = (msg_init_info*)malloc(sizeof(msg_init_info));
+    msg->header.type = INIT_INFO;
+    msg->header.size = sizeof(msg_init_info);
+    msg->next_player_ip = np_ip;
+    msg->next_player_port = np_port;
     return msg;
 }
 
