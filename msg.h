@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include "potato.h"
 
-#pragma pack (push, 1)
+#pragma pack(push, 1)
 enum msg_type
 {
     MASTER_HELLO,
@@ -18,14 +18,12 @@ typedef struct
     int size;
 } msg_header;
 
-
 typedef struct
 {
     msg_header header;
     int player_id;
     int num_players;
 } msg_master_hello;
-
 
 typedef struct
 {
@@ -34,12 +32,10 @@ typedef struct
     uint16_t next_player_port;
 } msg_init_info;
 
-
 typedef struct
 {
     msg_header header;
 } msg_master_bye;
-
 
 typedef struct
 {
@@ -48,13 +44,11 @@ typedef struct
     uint16_t listen_port;
 } msg_player_hello;
 
-
 typedef struct
 {
     msg_header header;
     int player_id;
 } msg_player_ready;
-
 
 typedef struct
 {
@@ -62,7 +56,7 @@ typedef struct
     potato the_potato;
 } msg_potato;
 
-#pragma pack (pop)
+#pragma pack(pop)
 
 void send_msg(int fd, const msg_header* msg);
 msg_header* recv_msg(int fd);
