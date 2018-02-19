@@ -35,31 +35,47 @@ int parse_int(const char* buffer, int min, int max)
     return val;
 }
 
-int listen_on_any(int* port_num, int wait_queue)
+int listen_on(int* port_num, int start_port, int end_port, int wait_queue)
 {
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == 0)
+    for (int port = start_port; port <= end_port; port++)
     {
-        perror("socket");
-        exit(EXIT_FAILURE);
+        int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (sockfd == 0)
+        {
+            perror("socket");
+            exit(EXIT_FAILURE);
+        }
+        int opt = 1;
+        if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
+        {
+            perror("setsockopt");
+            close(sockfd);
+            exit(EXIT_FAILURE);
+        }
+
+        struct sockaddr_in address;
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = INADDR_ANY;
+        address.sin_port = htons(port);
+        if (bind(sockfd, (struct sockaddr*)&address, sizeof(address)) != 0)
+        {
+            close(sockfd);
+            continue;
+        }
+        if (listen(sockfd, wait_queue) != 0)
+        {
+            close(sockfd);
+            continue;
+        }
+        *port_num = port;
+#ifndef NDEBUG
+        printf("listening on port %d\n", *port_num);
+#endif
+        return sockfd;
     }
-    int opt = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt)))
-    {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
-    if (listen(sockfd, wait_queue) < 0)
-    {
-        perror("listen");
-        exit(EXIT_FAILURE);
-    }
-    socklen_t addr_size = sizeof(struct sockaddr_in);
-    struct sockaddr_in addr;
-    getsockname(sockfd, (struct sockaddr*)&addr, &addr_size);
-    *port_num = ntohs(addr.sin_port);
-    return sockfd;
+
+    fprintf(stderr, "no port is available.\n");
+    exit(EXIT_FAILURE);
 }
 
 int connect_master(const char* master_name, int port_num)
@@ -210,7 +226,7 @@ int main(int argc, const char* argv[])
     const char* master_name = argv[1];
     int port_num = parse_int(argv[2], 1, 65535);
     int listen_port;
-    int listen_fd = listen_on_any(&listen_port, 1);
+    int listen_fd = listen_on(&listen_port, 51015, 51097, 1);
 
     master_fd = connect_master(master_name, port_num);
     msg_master_hello* mh_msg = (msg_master_hello*)recv_msg(master_fd);

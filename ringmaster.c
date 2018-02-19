@@ -49,8 +49,7 @@ int listen_on(int port_num, int wait_queue)
         exit(EXIT_FAILURE);
     }
     int opt = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt,
-                   sizeof(opt)))
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
     {
         perror("setsockopt");
         exit(EXIT_FAILURE);
@@ -189,7 +188,7 @@ int main(int argc, const char* argv[])
     {
         print_help_and_exit();
     }
-    int port_num = parse_int(argv[1], 1, 65535);
+    int port_num = parse_int(argv[1], 51015, 51097);
     num_players = parse_int(argv[2], 1, INT_MAX);
     num_hops = parse_int(argv[3], 0, 512);
     srand((unsigned int)time(NULL) + num_players);
