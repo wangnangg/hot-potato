@@ -1,5 +1,5 @@
-CFLAGS= -Wall -Wextra -DNDEBUG -O3
-#CFLAGS= -Wall -Wextra -g
+CFLAGS= -Wall -Wextra -DNDEBUG -O3 -gnu99
+#CFLAGS= -Wall -Wextra -g -gnu99
 
 .PHONY: all clean
 
